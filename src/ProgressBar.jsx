@@ -1,4 +1,4 @@
-import { useReducer, useEffect } from "react";
+import { useReducer, useEffect, useRef } from "react";
 
 const ACTIONS = {
   INCREASE: "INCREASE",
