@@ -9,11 +9,14 @@ import {
 
 const ACTIONS = {
   INCREASE: "INCREASE",
+  RESET: "RESET",
 };
 function reducer(state, action) {
   switch (action.type) {
     case ACTIONS.INCREASE:
       return action.payload;
+    case ACTIONS.RESET:
+      return 0;
     default:
       return state;
   }
@@ -23,20 +26,31 @@ const ProgressBar = (
   ref
 ) => {
   const [state, dispatch] = useReducer(reducer, 1);
-  const [stop, setStop] = useState(false);
+  const [start, setStart] = useState(false);
   const startTime = useRef();
 
   useImperativeHandle(ref, () => ({
-    toggleStop: () => {
-      setStop((prev) => !prev);
+    toggleStart: () => {
+      startTime.value = null;
+      setStart((prev) => !prev);
     },
+    reset: () => {
+      setStart(false);
+      startTime.current = null;
+      dispatch({ type: ACTIONS.RESET });
+    },
+    percentage: state,
   }));
+
+  useEffect(() => {
+    startTime.value = null;
+  }, [seconds, targetPercentage, startPercentage]);
 
   useEffect(() => {
     let animationFrameId;
 
     const animateProgress = (timestamp) => {
-      if (stop) return;
+      if (!start) return;
       const timeOffset = (startPercentage / targetPercentage) * seconds * 1000;
       if (!startTime.value) {
         startTime.value = timestamp - timeOffset;
@@ -61,7 +75,7 @@ const ProgressBar = (
       console.log("cancelAnimationFrame");
       cancelAnimationFrame(animationFrameId);
     };
-  }, [seconds, targetPercentage, startPercentage, stop]);
+  }, [seconds, targetPercentage, startPercentage, start]);
 
   return (
     <div
