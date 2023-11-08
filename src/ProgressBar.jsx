@@ -30,27 +30,31 @@ const ProgressBar = (
   const startTime = useRef();
 
   useImperativeHandle(ref, () => ({
+    // 開始或暫停進度條
     toggleStart: () => {
       startTime.value = null;
       setStart((prev) => !prev);
     },
+    // 重設進度條
     reset: () => {
       setStart(false);
       startTime.current = null;
       dispatch({ type: ACTIONS.RESET });
     },
+    // 提供目前進度給父元件
     percentage: state,
   }));
 
   useEffect(() => {
+    // 如果 seconds, targetPercentage, startPercentage 改變就重設開始時間避免進度跳躍
     startTime.value = null;
   }, [seconds, targetPercentage, startPercentage]);
 
   useEffect(() => {
     let animationFrameId;
-
     const animateProgress = (timestamp) => {
       if (!start) return;
+      // 如果初始值不是0，就用現在時間減去設定的時間
       const timeOffset = (startPercentage / targetPercentage) * seconds * 1000;
       if (!startTime.value) {
         startTime.value = timestamp - timeOffset;
@@ -65,14 +69,11 @@ const ProgressBar = (
       }
       dispatch({
         type: ACTIONS.INCREASE,
-        payload: Math.min(percentage, targetPercentage),
+        payload: Math.min(percentage, targetPercentage), // 使用 Math.min 避免進度超過 targetPercentage
       });
     };
-
     animationFrameId = requestAnimationFrame(animateProgress);
-
     return () => {
-      console.log("cancelAnimationFrame");
       cancelAnimationFrame(animationFrameId);
     };
   }, [seconds, targetPercentage, startPercentage, start]);
