@@ -1,4 +1,11 @@
-import { useReducer, useEffect, useRef } from "react";
+import {
+  useReducer,
+  useEffect,
+  useState,
+  useRef,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 
 const ACTIONS = {
   INCREASE: "INCREASE",
@@ -11,20 +18,31 @@ function reducer(state, action) {
       return state;
   }
 }
-const ProgressBar = ({ seconds, targetPercentage, startPercentage = 0 }) => {
+const ProgressBar = (
+  { seconds, targetPercentage, startPercentage = 0 },
+  ref
+) => {
   const [state, dispatch] = useReducer(reducer, 1);
+  const [stop, setStop] = useState(false);
+  const startTime = useRef();
+
+  useImperativeHandle(ref, () => ({
+    toggleStop: () => {
+      setStop((prev) => !prev);
+    },
+  }));
 
   useEffect(() => {
-    let startTime;
     let animationFrameId;
 
     const animateProgress = (timestamp) => {
+      if (stop) return;
       const timeOffset = (startPercentage / targetPercentage) * seconds * 1000;
-      if (!startTime) {
-        startTime = timestamp - timeOffset;
+      if (!startTime.value) {
+        startTime.value = timestamp - timeOffset;
       }
 
-      const elapsedTime = timestamp - startTime;
+      const elapsedTime = timestamp - startTime.value;
       const percentage = Math.round(
         (elapsedTime / (seconds * 1000)) * targetPercentage
       );
@@ -40,9 +58,10 @@ const ProgressBar = ({ seconds, targetPercentage, startPercentage = 0 }) => {
     animationFrameId = requestAnimationFrame(animateProgress);
 
     return () => {
+      console.log("cancelAnimationFrame");
       cancelAnimationFrame(animationFrameId);
     };
-  }, [seconds, targetPercentage, startPercentage]);
+  }, [seconds, targetPercentage, startPercentage, stop]);
 
   return (
     <div
@@ -59,4 +78,4 @@ const ProgressBar = ({ seconds, targetPercentage, startPercentage = 0 }) => {
   );
 };
 
-export default ProgressBar;
+export default forwardRef(ProgressBar);
